@@ -7,7 +7,7 @@ from django.utils.translation import ugettext_lazy as _
 
 class Genre(models.Model):
 
-    
+    name = models.CharField(max_length=200, help_text='Enter a book genre (e.g. Science Fiction)')
 
     class Meta:
         verbose_name = _("Genre")
