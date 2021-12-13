@@ -2,6 +2,8 @@ import uuid
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
+from django.contrib.auth.models import User
+from datetime import date
 
 # Create your models here.
 
@@ -33,14 +35,21 @@ class Book(models.Model):
 
     def get_absolute_url(self):
         return reverse('book-detail', args=[str(self.id)])
+    
+    def display_genre(self):
+        """Create a string for the Genre. This is required to display genre in Admin."""
+        return ', '.join(genre.name for genre in self.genre.all()[:3])
 
+    display_genre.short_description = 'Genre'
+    
 class BookInstance(models.Model):
 
     id = models.UUIDField(primary_key=True, default= uuid.uuid4, help_text='Unique ID')
     book = models.ForeignKey('Book', on_delete=models.RESTRICT, null=True)
     imprint = models.CharField(max_length=200)
     due_back = models.DateField(null= True, blank= True)
-
+    borrower = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    
     LOAN_STATUS = (('m', 'Maintenance'),('o', 'On Loan'),('a', 'Available'),('r', 'Reserved'),)
 
     status = models.CharField( max_length=1, choices = LOAN_STATUS, blank =True, default = 'm', help_text= 'Book availability')
@@ -50,6 +59,12 @@ class BookInstance(models.Model):
 
     def __str__(self):
         return f'{self.id} ({self.book.title})'
+    
+    @property
+    def is_overdue(self):
+        if self.due_back and date.today() > self.due_back:
+            return True
+        return False
 
 class Author(models.Model):
 
